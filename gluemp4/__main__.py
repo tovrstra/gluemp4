@@ -75,24 +75,49 @@ def work(config, tmpdir):
     """Perform the actual task using the given temporary directory."""
     fn_fragments = os.path.join(tmpdir, "fragments.txt")
     print(fn_fragments)
+    os.mkdir(os.path.join(tmpdir, "stage1"))
+    os.mkdir(os.path.join(tmpdir, "stage2"))
     with open(fn_fragments, "w") as f:
         for fn, crop, start, stop in config["fragments"]:
-            fn_out = os.path.join(tmpdir, fn)
-            f.write(f"file '{fn_out}'\n")
+            # STAGE 1:
+            # Crop and re-encode with 5 keyframes per second (too much for
+            # normal compression but allows fine-grained cutting in stage2).
+            fn_out1 = os.path.join(tmpdir, "stage1", fn)
             options = [
-                f"-i {fn}",
-                f"-ss {start:.3f}",
-                "-r 30",
+                "-i",
+                fn,
                 f'-filter:v "crop={crop}"',
                 "-acodec copy",
-                "-c:v libx264",
-                fn_out,
+                "-r 30",  # recordings from iPad have too high framerate
+                "-vcodec libx264",
+                "-preset ultrafast",
+                "-qp 0",  # lossless
+                "-x264-params keyint=6:scenecut=0",  # 1 keyframe ever 6 frames
+                fn_out1,
+            ]
+            run_verbose("ffmpeg {}".format(" ".join(options)))
+            # STAGE 2:
+            # Trim begin and end of the video, without recompression
+            fn_out2 = os.path.join(tmpdir, "stage2", fn)
+            options = [
+                "-i",
+                fn_out1,
+                f"-ss {start:.3f}",
+                "-acodec copy",
+                "-vcodec copy",
+                fn_out2,
             ]
             if stop is not None:
                 options.insert(2, f"-to {stop:.3f}")
             run_verbose("ffmpeg {}".format(" ".join(options)))
-    run_verbose(
-        "ffmpeg -f concat -safe 0 -i {} -c copy {}".format(
-            fn_fragments, config["output"]
-        )
-    )
+            f.write(f"file '{fn_out2}'\n")
+    options = [
+        "-f concat",
+        "-safe 0",
+        "-i",
+        fn_fragments,
+        "-acodec copy",
+        "-vcodec libx264",
+        config["output"],
+    ]
+    run_verbose("ffmpeg {}".format(" ".join(options)))

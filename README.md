@@ -10,7 +10,14 @@ screencasting on a tablet, into a single video clip.
 pip install git+https://github.com/tovrstra/gluemp4.git@master
 ```
 
-You also need to install ffmpeg separately.
+You also need to install ffmpeg separately:
+
+- On Fedora Linux, first activate [RPM Fusion](https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm).
+  Then run the following install command:
+
+  ```bash
+  sudo dnf install ffmpeg --allowerasing
+  ```
 
 ## Usage
 

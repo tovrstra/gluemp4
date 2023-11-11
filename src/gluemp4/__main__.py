@@ -1,5 +1,5 @@
 # GlueMP4 is a script to trim, crop and concatenate MP4 fragments with ffmpeg.
-# Copyright (C) 2019 Toon Verstraelen
+# Copyright (C) 2023 Toon Verstraelen
 #
 # This file is part of GlueMP4.
 #
